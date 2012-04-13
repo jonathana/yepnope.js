@@ -47,6 +47,8 @@ var docElement            = doc.documentElement,
     },
     globalFilters         = [],
     scriptCache           = {},
+    scriptTypeRegexp      = /^defer:/,
+    inlineIds             = {},
     prefixes              = {
       // key value pair timeout options
       timeout : function( resourceObj, prefix_parts ) {
@@ -161,8 +163,66 @@ var docElement            = doc.documentElement,
       }
     }
     else {
+      activateHeldScriptBlocks();
       // just reset out of recursive mode
       started = 0;
+    }
+  }
+
+  function getDeferredScriptBlocks() {
+
+    var deferredBlocks = [],
+      scriptBlocks = doc.getElementsByTagName("script");
+
+    for (var blockCnt = 0; blockCnt < scriptBlocks.length; blockCnt++) {
+      var scriptBlock = scriptBlocks[blockCnt];
+
+      if (!scriptBlock.hasAttribute('src')) {
+        var classNames = scriptBlock.className.split(' '),
+          i = classNames.length,
+          lazyBlock = false,
+          loadedBlock = false;
+
+        while (i--) {
+          if (classNames[i] === 'defer') { lazyBlock = true;}
+          if (classNames[i] === 'loaded') { loadedBlock = true;}
+        }
+
+        if (lazyBlock && !loadedBlock) { deferredBlocks.push(scriptBlock); }
+      }
+    }
+
+    return deferredBlocks;
+  }
+
+  function activateScriptBlockList(blockList) {
+    var unRunBlocks = [];
+
+    for (var i = 0; i < blockList.length; i++) {
+      var scriptBlock = blockList[i];
+      // script block has no dependency, or its dependency has already run
+      if (!scriptBlock.hasAttribute('depends') || scriptCache.hasOwnProperty(scriptBlock.getAttribute('depends'))) {
+        var scriptParent = scriptBlock.parentNode;
+        var scriptFollowing = scriptBlock.nextSibling;
+        scriptParent.removeChild(scriptBlock);
+        scriptBlock.setAttribute('type', scriptBlock.getAttribute('type').replace(scriptTypeRegexp, ''));
+        scriptBlock.className = scriptBlock.className + ' loaded';
+        if (scriptFollowing == null) { scriptParent.appendChild(scriptBlock); }
+        else {scriptParent.insertBefore(scriptBlock, scriptFollowing); }
+        // doesn't matter what the value is (it's ignored, we just care about presence of key), but we'll use true
+        scriptCache[scriptBlock.getAttribute('id')] = true; 
+      }
+      else { unRunBlocks.add(scriptBlock); }
+    }
+
+    return unRunBlocks;
+  }
+
+  function activateHeldScriptBlocks() {
+    var candidateBlocks = getDeferredScriptBlocks();
+
+    while (candidateBlocks.length > 0) {
+      candidateBlocks = activateScriptBlockList(candidateBlocks);
     }
   }
 
