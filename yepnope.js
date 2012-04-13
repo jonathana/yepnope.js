@@ -47,6 +47,7 @@ var docElement            = doc.documentElement,
     },
     globalFilters         = [],
     scriptCache           = {},
+    scriptTypeRegexp      = /^defer:/,
     inlineIds             = {},
     prefixes              = {
       // key value pair timeout options
@@ -163,7 +164,6 @@ var docElement            = doc.documentElement,
     }
     else {
       activateHeldScriptBlocks();
-      alert("empty stack");
       // just reset out of recursive mode
       started = 0;
     }
@@ -202,8 +202,13 @@ var docElement            = doc.documentElement,
       var scriptBlock = blockList[i];
       // script block has no dependency, or its dependency has already run
       if (!scriptBlock.hasAttribute('depends') || scriptCache.hasOwnProperty(scriptBlock.getAttribute('depends'))) {
-        scriptBlock.setAttribute('type', scriptBlock.getAttribute('type').replace(/^defer:/, ''));
+        var scriptParent = scriptBlock.parentNode;
+        var scriptFollowing = scriptBlock.nextSibling;
+        scriptParent.removeChild(scriptBlock);
+        scriptBlock.setAttribute('type', scriptBlock.getAttribute('type').replace(scriptTypeRegexp, ''));
         scriptBlock.className = scriptBlock.className + ' loaded';
+        if (scriptFollowing == null) { scriptParent.appendChild(scriptBlock); }
+        else {scriptParent.insertBefore(scriptBlock, scriptFollowing); }
         // doesn't matter what the value is (it's ignored, we just care about presence of key), but we'll use true
         scriptCache[scriptBlock.getAttribute('id')] = true; 
       }
