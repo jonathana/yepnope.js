@@ -47,7 +47,7 @@ var docElement            = doc.documentElement,
     },
     globalFilters         = [],
     scriptCache           = {},
-    scriptTypeRegexp      = /^defer:/,
+    scriptTypeRegexp      = /\/x-defer-/,
     inlineIds             = {},
     prefixes              = {
       // key value pair timeout options
@@ -205,7 +205,7 @@ var docElement            = doc.documentElement,
         var scriptParent = scriptBlock.parentNode;
         var scriptFollowing = scriptBlock.nextSibling;
         scriptParent.removeChild(scriptBlock);
-        scriptBlock.setAttribute('type', scriptBlock.getAttribute('type').replace(scriptTypeRegexp, ''));
+        scriptBlock.setAttribute('type', scriptBlock.getAttribute('type').replace(scriptTypeRegexp, '/'));
         scriptBlock.className = scriptBlock.className + ' loaded';
         if (scriptFollowing == null) { scriptParent.appendChild(scriptBlock); }
         else {scriptParent.insertBefore(scriptBlock, scriptFollowing); }
