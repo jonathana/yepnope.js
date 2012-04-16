@@ -47,7 +47,7 @@ var docElement            = doc.documentElement,
     },
     globalFilters         = [],
     scriptCache           = {},
-    scriptTypeRegexp      = /\/x-defer-/,
+    scriptTypeRegexp      = /\/x-defer-/i,
     inlineIds             = {},
     prefixes              = {
       // key value pair timeout options
