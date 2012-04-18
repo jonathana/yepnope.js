@@ -202,15 +202,7 @@ var docElement            = doc.documentElement,
       var scriptBlock = blockList[i];
       // script block has no dependency, or its dependency has already run
       if (!scriptBlock.hasAttribute('depends') || scriptCache.hasOwnProperty(scriptBlock.getAttribute('depends'))) {
-        var scriptParent = scriptBlock.parentNode;
-        var scriptFollowing = scriptBlock.nextSibling;
-        scriptParent.removeChild(scriptBlock);
-        scriptBlock.setAttribute('type', scriptBlock.getAttribute('type').replace(scriptTypeRegexp, '/'));
-        scriptBlock.className = scriptBlock.className + ' loaded';
-        if (scriptFollowing == null) { scriptParent.appendChild(scriptBlock); }
-        else {scriptParent.insertBefore(scriptBlock, scriptFollowing); }
-        // doesn't matter what the value is (it's ignored, we just care about presence of key), but we'll use true
-        scriptCache[scriptBlock.getAttribute('id')] = true; 
+        unDeferScriptBlock(scriptBlock);
       }
       else { unRunBlocks.add(scriptBlock); }
     }
@@ -224,6 +216,22 @@ var docElement            = doc.documentElement,
     while (candidateBlocks.length > 0) {
       candidateBlocks = activateScriptBlockList(candidateBlocks);
     }
+  }
+
+  // Thank you Gecko for not letting DOM detach/attach work
+  function unDeferScriptBlock(scriptBlock) {
+        var scriptParent = scriptBlock.parentNode;
+        var scriptFollowing = scriptBlock.nextSibling;
+        var scriptNew = document.createElement("script");
+        scriptNew.setAttribute("type", scriptBlock.getAttribute('type').replace(scriptTypeRegexp, '/'));
+        scriptNew.className = scriptBlock.className + ' loaded';
+        scriptNew.id = scriptBlock.id;
+        scriptNew.text = scriptBlock.text;
+        scriptParent.removeChild(scriptBlock);
+        if (scriptFollowing == null) { scriptParent.appendChild(scriptNew); }
+        else {scriptParent.insertBefore(scriptNew, scriptFollowing); }
+        // doesn't matter what the value is (it's ignored, we just care about presence of key), but we'll use true
+        scriptCache[scriptBlock.getAttribute('id')] = true; 
   }
 
   function preloadFile ( elem, url, type, splicePoint, dontExec, attrObj, timeout ) {
